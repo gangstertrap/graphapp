@@ -3,8 +3,11 @@ package graphapp.userinterface;
 import graphapp.constants.ToolMode;
 import graphapp.graphtheory.Edge;
 import graphapp.graphtheory.Vertex;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -18,8 +21,11 @@ public class UserInterface
     private final BorderPane borderPane;
     private final Pane pane;
     private UIEventListener controller;
-    private HashMap<Vertex, VertexLabel> vertices;
-    private HashMap<Edge, Line> edges;
+    private final HashMap<Vertex, VertexLabel> vertices;
+    private final HashMap<Edge, EdgeGroup> edges;
+
+
+    private MenuItem deleteEdit;
 
     // add data structure for edges
 
@@ -32,18 +38,18 @@ public class UserInterface
         pane = new Pane();
 
         borderPane.setCenter(pane);
-        initializeUI();
-        stage.show();
 
-        pane.setOnMouseClicked(event -> controller.onPaneClicked(event));
-    }
-
-    private void initializeUI()
-    {
         initTopBar();
         initBottomInfoBar();
+
         Scene scene = new Scene(borderPane, 800, 600);
         stage.setScene(scene);
+        stage.show();
+        scene.setOnKeyPressed(event -> controller.onKeyPressed(event));
+        pane.setOnMouseClicked(event -> controller.onMouseClicked(event));
+        pane.setOnMousePressed(event -> controller.onMousePressed(event));
+        pane.setOnMouseReleased(event -> controller.onMouseReleased(event));
+        pane.setOnMouseDragged(event -> controller.onMouseDragged(event));
     }
 
     private void initTopBar()
@@ -72,13 +78,17 @@ public class UserInterface
         MenuItem openFile = new MenuItem("Open");
         MenuItem saveFile = new MenuItem("Save");
 
+        deleteEdit = new MenuItem("Delete");
         MenuItem undoEdit = new MenuItem("Undo");
         MenuItem redoEdit = new MenuItem("Redo");
         MenuItem copyEdit = new MenuItem("Copy");
         MenuItem pasteEdit = new MenuItem("Paste");
+        deleteEdit.setDisable(true);
+
+        deleteEdit.setOnAction(actionEvent -> controller.onMenuDeleteClicked(actionEvent));
 
         fileMenu.getItems().addAll(newFile, openFile, saveFile);
-        editMenu.getItems().addAll(undoEdit, redoEdit, copyEdit, pasteEdit);
+        editMenu.getItems().addAll(deleteEdit, undoEdit, redoEdit, copyEdit, pasteEdit);
 
         vbox.getChildren().add(topMenuBar);
     }
@@ -144,12 +154,6 @@ public class UserInterface
         vertices.put(v, vl);
     }
 
-    @Deprecated
-    public void updateVertexLabelDirectly(VertexLabel vl, double x, double y)
-    {
-        vl.setLayoutX(x);
-        vl.setLayoutY(y);
-    }
     public void updateVertexLabel(Vertex v)
     {
         VertexLabel label = vertices.get(v);
@@ -162,13 +166,11 @@ public class UserInterface
         {
             if(v.equals(e.getVertex1()))
             {
-                edges.get(e).setStartX(x + VertexLabel.RADIUS);
-                edges.get(e).setStartY(y + VertexLabel.RADIUS);
+                edges.get(e).setLineStartPoint(x + VertexLabel.RADIUS, y + VertexLabel.RADIUS);
             }
             if(v.equals(e.getVertex2()))
             {
-                edges.get(e).setEndX(x + VertexLabel.RADIUS);
-                edges.get(e).setEndY(y + VertexLabel.RADIUS);
+                edges.get(e).setLineEndPoint(x + VertexLabel.RADIUS, y + VertexLabel.RADIUS);
             }
         }
     }
@@ -177,21 +179,23 @@ public class UserInterface
     {
         VertexLabel vl1 = vertices.get(e.getVertex1());
         VertexLabel vl2 = vertices.get(e.getVertex2());
+
         Line line = new Line(vl1.getLayoutX() + VertexLabel.RADIUS, vl1.getLayoutY() + VertexLabel.RADIUS,
                 vl2.getLayoutX() + VertexLabel.RADIUS, vl2.getLayoutY() + VertexLabel.RADIUS);
-        line.setStrokeWidth(1);
-        line.setStroke(Color.BLACK);
-        pane.getChildren().add(line);
-        line.toBack();
-        edges.put(e, line);
+
+        EdgeGroup edge = new EdgeGroup(e, line);
+        edge.setOnMouseClicked(event -> controller.onMouseClicked(event));
+        pane.getChildren().add(edge);
+        edge.toBack();
+        edges.put(e, edge);
     }
 
     private void addListenersToVertexLabel(VertexLabel vl)
     {
-        vl.setOnMouseClicked(event -> controller.onVertexClicked(event));
-        vl.setOnMousePressed(event -> controller.onVertexPressed(event));
-        vl.setOnMouseReleased(event -> controller.onVertexReleased(event));
-        vl.setOnMouseDragged(event -> controller.onVertexDragged(event));
+        vl.setOnMouseClicked(event -> controller.onMouseClicked(event));
+        vl.setOnMousePressed(event -> controller.onMousePressed(event));
+        vl.setOnMouseReleased(event -> controller.onMouseReleased(event));
+        vl.setOnMouseDragged(event -> controller.onMouseDragged(event));
         vl.setOnMouseEntered(event -> controller.onVertexEntered(event));
         vl.setOnMouseExited(event -> controller.onVertexExited(event));
     }
@@ -201,4 +205,20 @@ public class UserInterface
         this.controller = controller;
     }
 
+    public void removeVertex(Vertex v) {
+        pane.getChildren().remove(vertices.get(v));
+        for(Edge e: v.getEdges()) {
+            removeEdge(e);
+        }
+        vertices.remove(v);
+    }
+
+    public void removeEdge(Edge e) {
+        pane.getChildren().remove(edges.get(e));
+        edges.remove(e);
+    }
+
+    public void nodesAreSelected(boolean b) {
+        deleteEdit.setDisable(!b);
+    }
 }
