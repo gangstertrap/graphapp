@@ -1,29 +1,28 @@
 package graphapp.userinterface;
 
+import graphapp.constants.AppColors;
 import graphapp.constants.ToolMode;
 import graphapp.graphtheory.Edge;
 import graphapp.graphtheory.Vertex;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 import java.util.HashMap;
 
 public class UserInterface
 {
-    private final Stage stage;
     private final BorderPane borderPane;
     private final Pane pane;
     private UIEventListener controller;
     private final HashMap<Vertex, VertexLabel> vertices;
     private final HashMap<Edge, EdgeGroup> edges;
-
+    private final Rectangle selectRectangle;
 
     private MenuItem deleteEdit;
 
@@ -31,7 +30,6 @@ public class UserInterface
 
     public UserInterface(Stage stage)
     {
-        this.stage = stage;
         this.borderPane = new BorderPane();
         vertices = new HashMap<>();
         edges = new HashMap<>();
@@ -41,6 +39,13 @@ public class UserInterface
 
         initTopBar();
         initBottomInfoBar();
+
+        selectRectangle = new Rectangle(0,0,0,0);
+        pane.getChildren().add(selectRectangle);
+        selectRectangle.setVisible(false);
+        selectRectangle.setFill(Color.TRANSPARENT);
+        selectRectangle.setStroke(AppColors.SELECTED_COLOR);
+        selectRectangle.getStrokeDashArray().addAll(10d,10d);
 
         Scene scene = new Scene(borderPane, 800, 600);
         stage.setScene(scene);
@@ -220,5 +225,26 @@ public class UserInterface
 
     public void nodesAreSelected(boolean b) {
         deleteEdit.setDisable(!b);
+    }
+
+    public void updateSelectRect(Rectangle2D rect) {
+        if(rect != null) {
+            selectRectangle.setX(rect.getMinX());
+            selectRectangle.setY(rect.getMinY());
+            selectRectangle.setWidth(rect.getWidth());
+            selectRectangle.setHeight(rect.getHeight());
+            selectRectangle.setVisible(true);
+        }
+        else
+            selectRectangle.setVisible(false);
+    }
+
+    public VertexLabel[] getVertices()
+    {
+        return vertices.values().toArray(new VertexLabel[0]);
+    }
+
+    public EdgeGroup[] getEdges() {
+        return edges.values().toArray(new EdgeGroup[0]);
     }
 }

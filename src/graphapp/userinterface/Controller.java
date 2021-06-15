@@ -5,24 +5,28 @@ import graphapp.graphtheory.Edge;
 import graphapp.graphtheory.Graph;
 import graphapp.graphtheory.Vertex;
 import javafx.event.ActionEvent;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-
+import javafx.geometry.Point2D;
 import java.util.HashSet;
 import java.util.Set;
 
-/* Possibly merge onPaneClicked and onVertexClicked into onMouseClicked and just add the same listener to everything?
- * Not sure how well that would work
- */
 public class Controller implements UIEventListener {
     private Graph graph;
     private UserInterface ui;
     private ToolMode currentMode = ToolMode.SELECT;
 
+    private Point2D selectRectStart = Point2D.ZERO;
+    private Point2D selectRectEnd = Point2D.ZERO;
+
+    private boolean selectRectEnabled = false;
+
     private VertexLabel newEdgeFirstVertex = null;
+
 
     private double vertexDeltaX = 0;
     private double vertexDeltaY = 0;
@@ -86,12 +90,14 @@ public class Controller implements UIEventListener {
                         selectedNodes = new HashSet<>();
                         setNodeSelected((Node)event.getSource(), true);
                     }
-                } else {
+                } else if (!selectRectEnabled) {
                     for(Node n : selectedNodes) {
                         setNodeSelected(n, false);
                     }
                     selectedNodes = new HashSet<>();
                     ui.nodesAreSelected(false);
+                } else {
+                    selectRectEnabled = false;
                 }
                 break;
             case MOVE:
@@ -144,34 +150,92 @@ public class Controller implements UIEventListener {
     }
 
     public void onMousePressed(MouseEvent event) {
-        if (currentMode == ToolMode.MOVE && event.getSource() instanceof VertexLabel) {
-            VertexLabel label = (VertexLabel) event.getSource();
-            label.getScene().setCursor(Cursor.MOVE);
-            vertexDeltaX = label.getLayoutX() - event.getSceneX();
-            vertexDeltaY = label.getLayoutY() - event.getSceneY();
-
-            event.consume();
+        switch (currentMode) {
+            case MOVE:
+                if(event.getSource() instanceof VertexLabel) {
+                    VertexLabel label = (VertexLabel) event.getSource();
+                    label.getScene().setCursor(Cursor.MOVE);
+                    vertexDeltaX = label.getLayoutX() - event.getSceneX();
+                    vertexDeltaY = label.getLayoutY() - event.getSceneY();
+                    event.consume();
+                }
+                break;
+            case SELECT:
+                    selectRectStart = new Point2D(event.getX(), event.getY());
+                break;
         }
     }
 
     public void onMouseReleased(MouseEvent event) {
-        if (event.getSource() instanceof VertexLabel && currentMode == ToolMode.MOVE) {
-            VertexLabel label = (VertexLabel) event.getSource();
-            if (!event.isPrimaryButtonDown()) {
-                label.getScene().setCursor(Cursor.HAND);
-            }
-            event.consume();
+        switch(currentMode) {
+            case MOVE:
+                if (event.getSource() instanceof VertexLabel) {
+                    VertexLabel label = (VertexLabel) event.getSource();
+                    if (!event.isPrimaryButtonDown()) {
+                        label.getScene().setCursor(Cursor.HAND);
+                    }
+                    event.consume();
+                }
+                break;
+            case SELECT:
+                System.out.println("mouse released in select mode");
+                Rectangle2D rect = new Rectangle2D(
+                        Math.min(selectRectStart.getX(),event.getX()),
+                        Math.min(selectRectStart.getY(), event.getY()),
+                        Math.abs(event.getX() - selectRectStart.getX()),
+                        Math.abs(event.getY() - selectRectStart.getY()));
+                boolean flag = false;
+                for(VertexLabel vl : ui.getVertices()) {
+                    if(vl.getLayoutX() > rect.getMinX() - VertexLabel.RADIUS && vl.getLayoutX() < rect.getMaxX() + 2 * VertexLabel.RADIUS
+                            && vl.getLayoutY() > rect.getMinY() - VertexLabel.RADIUS && vl.getLayoutY() < rect.getMaxY() + 2 * VertexLabel.RADIUS) {
+                        setNodeSelected(vl, true);
+                        flag = true;
+                        selectedNodes.add(vl);
+                        System.out.println("vertex in rect bounds");
+                    }
+                }
+                for(EdgeGroup eg : ui.getEdges()) {
+                    if(pointInRect(eg.getLineStartX(),eg.getLineStartY(), rect)
+                            || pointInRect(eg.getLineEndX(), eg.getLineEndY(), rect)) {
+                        setNodeSelected(eg, true);
+                        flag = true;
+                        selectedNodes.add(eg);
+                        System.out.println("edge in rect bounds");
+                    }
+                }
+                if(flag)
+                    ui.nodesAreSelected(true);
+                ui.updateSelectRect(null);
+                event.consume();
+                break;
         }
     }
 
-    public void onMouseDragged(MouseEvent event) {
-        if (currentMode == ToolMode.MOVE && event.getSource() instanceof VertexLabel) {
-            VertexLabel label = (VertexLabel) event.getSource();
-            Vertex v = label.getVertex();
-            graph.updateVertexPosition(v, event.getSceneX() + vertexDeltaX, event.getSceneY() + vertexDeltaY);
-            ui.updateVertexLabel(v);
+    private boolean pointInRect(double x, double y, Rectangle2D rect) {
+        return x > rect.getMinX() && x < rect.getMaxX() && y > rect.getMinY() && y < rect.getMaxY();
+    }
 
-            event.consume();
+    public void onMouseDragged(MouseEvent event) {
+        switch (currentMode) {
+            case MOVE:
+            if(event.getSource() instanceof VertexLabel) {
+                VertexLabel label = (VertexLabel) event.getSource();
+                Vertex v = label.getVertex();
+                graph.updateVertexPosition(v, event.getSceneX() + vertexDeltaX, event.getSceneY() + vertexDeltaY);
+                ui.updateVertexLabel(v);
+
+                event.consume();
+            }
+                break;
+            case SELECT:
+                Rectangle2D rect = new Rectangle2D(
+                        Math.min(selectRectStart.getX(),event.getX()),
+                        Math.min(selectRectStart.getY(), event.getY()),
+                        Math.abs(event.getX() - selectRectStart.getX()),
+                        Math.abs(event.getY() - selectRectStart.getY()));
+                ui.updateSelectRect(rect);
+                selectRectEnabled = true;
+                break;
         }
     }
 
