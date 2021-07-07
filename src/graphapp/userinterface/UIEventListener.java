@@ -2,6 +2,7 @@ package graphapp.userinterface;
 
 import graphapp.constants.ToolMode;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 
@@ -23,5 +24,9 @@ public interface UIEventListener
 
     void onVertexExited(MouseEvent event);
 
-    void onMenuDeleteClicked(ActionEvent event);
+    void onEditMenuShowing(Event event);
+
+    void onKeyTyped(KeyEvent event);
+
+    void onMenuItemClicked(ActionEvent actionEvent);
 }

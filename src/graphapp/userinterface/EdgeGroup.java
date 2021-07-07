@@ -47,6 +47,14 @@ public class EdgeGroup extends Group {
         label.setLayoutY((line.getStartY() + line.getEndY()) * 0.5);
     }
 
+    public Point2D getLineStart() {
+        return new Point2D(getLineStartX(), getLineStartY());
+    }
+
+    public Point2D getLineEnd() {
+        return new Point2D(getLineEndX(), getLineEndY());
+    }
+
     public double getLineStartX() {
         return line.getStartX();
     }

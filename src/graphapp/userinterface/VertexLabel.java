@@ -19,7 +19,7 @@ public class VertexLabel extends Label
 
     public VertexLabel(double x, double y, Vertex vertex)
     {
-        super(vertex.getId());
+        super(vertex.getId() + "");
         setLayoutX(x - RADIUS);
         setLayoutY(y - RADIUS);
         this.vertex = vertex;
@@ -35,6 +35,11 @@ public class VertexLabel extends Label
 
     }
 
+    public String getVertexId()
+    {
+        return vertex.getId();
+    }
+
     public Vertex getVertex()
     {
         return vertex;
@@ -45,6 +50,5 @@ public class VertexLabel extends Label
         this.selected = bool;
         circle.setStroke(bool ? AppColors.SELECTED_COLOR : Color.BLACK);
     }
-
 
 }

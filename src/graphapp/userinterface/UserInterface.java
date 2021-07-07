@@ -4,9 +4,12 @@ import graphapp.constants.AppColors;
 import graphapp.constants.ToolMode;
 import graphapp.graphtheory.Edge;
 import graphapp.graphtheory.Vertex;
+import javafx.geometry.Point2D;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
@@ -18,24 +21,27 @@ import java.util.HashMap;
 public class UserInterface
 {
     private final BorderPane borderPane;
-    private final Pane pane;
+    //private final Pane pane;
+    private final Group group;
     private UIEventListener controller;
     private final HashMap<Vertex, VertexLabel> vertices;
     private final HashMap<Edge, EdgeGroup> edges;
+
     private final Rectangle selectRectangle;
 
     private MenuItem deleteEdit;
-
-    // add data structure for edges
+    private MenuItem renameEdit;
 
     public UserInterface(Stage stage)
     {
         this.borderPane = new BorderPane();
         vertices = new HashMap<>();
         edges = new HashMap<>();
-        pane = new Pane();
+        Pane pane = new Pane();
+        group = new Group();
 
         borderPane.setCenter(pane);
+        pane.getChildren().add(group);
 
         initTopBar();
         initBottomInfoBar();
@@ -50,11 +56,18 @@ public class UserInterface
         Scene scene = new Scene(borderPane, 800, 600);
         stage.setScene(scene);
         stage.show();
-        scene.setOnKeyPressed(event -> controller.onKeyPressed(event));
+        //pane.setOnKeyPressed(event -> controller.onKeyPressed(event));
+
+        pane.setOnKeyTyped(event -> controller.onKeyTyped(event));
         pane.setOnMouseClicked(event -> controller.onMouseClicked(event));
         pane.setOnMousePressed(event -> controller.onMousePressed(event));
         pane.setOnMouseReleased(event -> controller.onMouseReleased(event));
         pane.setOnMouseDragged(event -> controller.onMouseDragged(event));
+        borderPane.addEventFilter(KeyEvent.KEY_PRESSED, keyEvent -> {
+            keyEvent.consume();
+            controller.onKeyPressed(keyEvent);
+        });
+        borderPane.setFocusTraversable(false);
     }
 
     private void initTopBar()
@@ -76,24 +89,43 @@ public class UserInterface
 
         Menu fileMenu = new Menu("File");
         Menu editMenu = new Menu("Edit");
+        Menu viewMenu = new Menu("View");
         topMenuBar.getMenus().add(fileMenu);
         topMenuBar.getMenus().add(editMenu);
+        topMenuBar.getMenus().add(viewMenu);
 
         MenuItem newFile = new MenuItem("New");
         MenuItem openFile = new MenuItem("Open");
         MenuItem saveFile = new MenuItem("Save");
 
         deleteEdit = new MenuItem("Delete");
+        renameEdit = new MenuItem("Rename");
         MenuItem undoEdit = new MenuItem("Undo");
         MenuItem redoEdit = new MenuItem("Redo");
         MenuItem copyEdit = new MenuItem("Copy");
         MenuItem pasteEdit = new MenuItem("Paste");
-        deleteEdit.setDisable(true);
 
-        deleteEdit.setOnAction(actionEvent -> controller.onMenuDeleteClicked(actionEvent));
+        MenuItem recenter = new MenuItem("Recenter");
+        MenuItem zoomIn = new MenuItem("Zoom In");
+        MenuItem zoomOut = new MenuItem("Zoom Out");
+        MenuItem zoomReset = new MenuItem("Reset Zoom");
+
+        deleteEdit.setOnAction(actionEvent -> controller.onMenuItemClicked(actionEvent));
+        renameEdit.setOnAction(actionEvent -> controller.onMenuItemClicked(actionEvent));
+        recenter.setOnAction(actionEvent -> controller.onMenuItemClicked(actionEvent));
+        zoomIn.setOnAction(actionEvent -> controller.onMenuItemClicked(actionEvent));
+        zoomOut.setOnAction(actionEvent -> controller.onMenuItemClicked(actionEvent));
+        zoomReset.setOnAction(actionEvent -> controller.onMenuItemClicked(actionEvent));
+
+        editMenu.setOnShowing(event -> controller.onEditMenuShowing(event));
+
+        deleteEdit.setDisable(true);
+        renameEdit.setDisable(true);
 
         fileMenu.getItems().addAll(newFile, openFile, saveFile);
-        editMenu.getItems().addAll(deleteEdit, undoEdit, redoEdit, copyEdit, pasteEdit);
+        editMenu.getItems().addAll(deleteEdit, renameEdit, undoEdit, redoEdit, copyEdit, pasteEdit);
+        viewMenu.getItems().addAll(recenter, zoomIn, zoomOut, zoomReset);
+        topMenuBar.setFocusTraversable(false);
 
         vbox.getChildren().add(topMenuBar);
     }
@@ -115,17 +147,20 @@ public class UserInterface
         RadioButton rb2 = new RadioButton("Move");
         RadioButton rb3 = new RadioButton("New Vertex");
         RadioButton rb4 = new RadioButton("New Edge");
+        RadioButton rb5 = new RadioButton("Pan");
         rb1.setUserData(ToolMode.SELECT);
         rb2.setUserData(ToolMode.MOVE);
         rb3.setUserData(ToolMode.NEW_VERTEX);
         rb4.setUserData(ToolMode.NEW_EDGE);
+        rb5.setUserData(ToolMode.PAN);
 
         rb1.setToggleGroup(tgroup);
         rb2.setToggleGroup(tgroup);
         rb3.setToggleGroup(tgroup);
         rb4.setToggleGroup(tgroup);
+        rb5.setToggleGroup(tgroup);
         rb1.setSelected(true);
-        topToolBar.getItems().addAll(rb1, rb2, rb3, rb4);
+        topToolBar.getItems().addAll(rb1, rb2, rb3, rb4, rb5);
 
         tgroup.selectedToggleProperty().addListener(
                 (observableValue, oldToggle, newToggle) ->
@@ -151,12 +186,13 @@ public class UserInterface
         borderPane.setBottom(bottomToolBar);
     }
 
-    public void addNewVertexLabel(Vertex v)
+    public VertexLabel addNewVertexLabel(Vertex v)
     {
         VertexLabel vl = new VertexLabel(v.getX(), v.getY(), v);
         addListenersToVertexLabel(vl);
-        pane.getChildren().add(vl);
+        group.getChildren().add(vl);
         vertices.put(v, vl);
+        return vl;
     }
 
     public void updateVertexLabel(Vertex v)
@@ -190,7 +226,7 @@ public class UserInterface
 
         EdgeGroup edge = new EdgeGroup(e, line);
         edge.setOnMouseClicked(event -> controller.onMouseClicked(event));
-        pane.getChildren().add(edge);
+        group.getChildren().add(edge);
         edge.toBack();
         edges.put(e, edge);
     }
@@ -211,7 +247,7 @@ public class UserInterface
     }
 
     public void removeVertex(Vertex v) {
-        pane.getChildren().remove(vertices.get(v));
+        group.getChildren().remove(vertices.get(v));
         for(Edge e: v.getEdges()) {
             removeEdge(e);
         }
@@ -219,12 +255,16 @@ public class UserInterface
     }
 
     public void removeEdge(Edge e) {
-        pane.getChildren().remove(edges.get(e));
+        group.getChildren().remove(edges.get(e));
         edges.remove(e);
     }
 
-    public void nodesAreSelected(boolean b) {
-        deleteEdit.setDisable(!b);
+    public void deleteEditSetDisable(boolean b) {
+        deleteEdit.setDisable(b);
+    }
+
+    public void renameEditSetDisable(boolean b) {
+        renameEdit.setDisable(b);
     }
 
     public void updateSelectRect(Rectangle2D rect) {
@@ -246,5 +286,98 @@ public class UserInterface
 
     public EdgeGroup[] getEdges() {
         return edges.values().toArray(new EdgeGroup[0]);
+    }
+
+    public String showRenameDialog(String oldId) {
+        TextInputDialog dialog = new TextInputDialog(oldId);
+        TextField field = dialog.getEditor();
+        TextFormatter<String> formatter = new TextFormatter<>(change -> {
+            if (!change.getText().matches("\\d+")) {
+                change.setText("");
+                /*change.setRange(
+                        change.getRangeStart(),
+                        change.getRangeStart()
+                );*/
+            }
+            return change;
+        });
+        field.setTextFormatter(formatter);
+        dialog.setTitle("Rename Vertex");
+        dialog.setGraphic(null);
+        dialog.setHeaderText("");
+        dialog.setContentText("Input must be an integer.");
+        dialog.showAndWait();
+
+        try {
+            int i = Integer.parseInt(dialog.getResult());
+        } catch(NumberFormatException e) {
+            return oldId;
+        }
+        return dialog.getResult();
+    }
+
+    public void showRenameErrorAlert() {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error in renaming vertex");
+        alert.setGraphic(null);
+        alert.setHeaderText("");
+        alert.setContentText("Unable to rename vertex:\nA vertex with that label already exists.");
+        alert.show();
+    }
+
+
+    public double getGroupTranslateX()
+    {
+        return group.getTranslateX();
+    }
+
+    public double getGroupTranslateY()
+    {
+        return group.getTranslateY();
+    }
+
+    public void translateGroup(double x, double y)
+    {
+        group.setTranslateX(x);
+        group.setTranslateY(y);
+    }
+
+    public void incrementScale()
+    {
+        if(group.getScaleX() < 2.25) {
+            group.setScaleX(group.getScaleX() + 0.25);
+            group.setScaleY(group.getScaleY() + 0.25);
+        }
+    }
+    public void decrementScale()
+    {
+        if(group.getScaleX()> 0.5) {
+            group.setScaleX(group.getScaleX() - 0.25);
+            group.setScaleY(group.getScaleY() - 0.25);
+        }
+    }
+
+    public void resetScale()
+    {
+        group.setScaleX(1);
+        group.setScaleY(1);
+    }
+
+    public double getGroupScale() {
+        return group.getScaleX();
+    }
+
+    public Point2D groupParentToLocal(Point2D point)
+    {
+        return group.parentToLocal(point);
+    }
+
+    public Point2D groupLocalToParent(Point2D point) {
+        return group.localToParent(point);
+    }
+
+    public void resetGroupTranslate() {
+        group.setTranslateX(0);
+        group.setTranslateY(0);
     }
 }

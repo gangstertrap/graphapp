@@ -8,32 +8,25 @@ import java.util.Set;
 
 public class Vertex
 {
-    private static int totalId = 0;
 
     private String id;
     private double x, y;
     private final Set<Edge> edges;
 
-    public Vertex()
+    protected Vertex(String id)
     {
-        id = nextId();
+        this.id = id;
         x = 0;
         y = 0;
         edges = new HashSet<>();
     }
 
-    public Vertex(double x, double y)
+    protected Vertex(double x, double y, String id)
     {
-        id = nextId();
+        this.id = id;
         this.x = x;
         this.y = y;
         edges = new HashSet<>();
-    }
-
-    public static String nextId()
-    {
-        totalId++;
-        return "" + totalId;
     }
 
     public String getId()
