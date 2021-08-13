@@ -141,7 +141,7 @@ public class UserInterface {
         gp.add(hbox0, 1, 1);
         gp.add(hbox1, 1, 2);
         graphSettingsStage.setResizable(false);
-
+        stage.getIcons().add(new Image("/icon.png"));
     }
 
     public boolean getWeightedCheckValue() {
