@@ -11,14 +11,17 @@ public class Vertex
 
     private String id;
     private double x, y;
-    private final Set<Edge> edges;
+    private transient final Set<Edge> edges = new HashSet<>();
 
+    public Vertex() {
+
+    }
     protected Vertex(String id)
     {
         this.id = id;
         x = 0;
         y = 0;
-        edges = new HashSet<>();
+        //edges = new HashSet<>();
     }
 
     protected Vertex(double x, double y, String id)
@@ -26,7 +29,7 @@ public class Vertex
         this.id = id;
         this.x = x;
         this.y = y;
-        edges = new HashSet<>();
+        //edges = new HashSet<>();
     }
 
     public String getId()

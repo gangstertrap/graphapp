@@ -10,8 +10,6 @@ public interface UIEventListener
 {
     void onModeChange(ToolMode mode);
 
-    void onKeyPressed(KeyEvent event);
-
     void onMouseClicked(MouseEvent event);
 
     void onMousePressed(MouseEvent event);
@@ -26,7 +24,11 @@ public interface UIEventListener
 
     void onEditMenuShowing(Event event);
 
-    void onKeyTyped(KeyEvent event);
+    //void onKeyPressed(KeyEvent event);
+
+    //void onKeyTyped(KeyEvent event);
 
     void onMenuItemClicked(ActionEvent actionEvent);
+
+    void onGraphSettingsButtonClicked(ActionEvent event);
 }

@@ -1,25 +1,27 @@
 package graphapp.graphtheory;
 
-import graphapp.persistence.IStorage;
-
 import java.util.*;
 
 public class Graph {
     private int idTotal = 1;
     private final Set<Edge> edges;
     private final Map<String, Vertex> vertices;
-    boolean isWeighted;
+    private String name;
+    private String URI;
+    private boolean isWeighted;
+    private boolean isDirected;
 
-    public Graph(IStorage storage) {
+    public Graph() {
         edges = new HashSet<>();
         vertices = new HashMap<>();
+        name = "Untitled";
     }
 
     public Set<Edge> getEdges() {
         return edges;
     }
 
-    private Map<String, Vertex> getVertices() {
+    public Map<String, Vertex> getVertices() {
         return vertices;
     }
 
@@ -33,6 +35,20 @@ public class Graph {
 
     private String nextId() {
         return "" + idTotal++;
+    }
+
+    public int getIdTotal() {
+        return idTotal;
+    }
+
+    public boolean hasEdgeOn(Vertex a, Vertex b)
+    {
+        for(Edge e : a.getEdges())
+        {
+            if(e.hasVertex(a) && e.hasVertex(b))
+                return true;
+        }
+        return false;
     }
 
     public Edge addEdgeOn(Vertex a, Vertex b, int weight) {
@@ -61,6 +77,12 @@ public class Graph {
         Returns true if new id not taken, and id changing successful, or if swapping successful
         returns false if new id is taken, or if swap is true and there is nothing to swap with
      */
+
+    public boolean changeEdgeWeight(Edge e, int newWeight){
+        e.setWeight(newWeight);
+        return true;
+    }
+
     public boolean changeVertexId(Vertex v, String newId, boolean swap) {
         if(v.getId().equals(newId))
             return true;
@@ -90,5 +112,40 @@ public class Graph {
     public void updateVertexPos(Vertex v, double x, double y) {
         v.setX(x);
         v.setY(y);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String s) {
+        name = s;
+    }
+
+    public boolean isWeighted() {
+        return isWeighted;
+    }
+
+    public void setWeighted(boolean weighted) {
+        isWeighted = weighted;
+    }
+
+    public String getURI() {
+        return URI;
+    }
+
+    public void setURI(String URI) {
+        this.URI = URI;
+    }
+
+    public void setIdTotal(int idTotal) {
+        this.idTotal = idTotal;
+    }
+
+    public void setDirected(boolean directed) {
+        isDirected = directed;
+    }
+    public boolean isDirected() {
+        return isDirected;
     }
 }

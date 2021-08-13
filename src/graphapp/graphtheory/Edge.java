@@ -2,11 +2,11 @@ package graphapp.graphtheory;
 
 public class Edge
 {
-    final Vertex vertex1;
-    final Vertex vertex2;
-    int weight;
+    private Vertex vertex1;
+    private Vertex vertex2;
+    private int weight;
 
-    protected Edge(Vertex vertex1, Vertex vertex2, int weight)
+    public Edge(Vertex vertex1, Vertex vertex2, int weight)
     {
         this.vertex1 = vertex1;
         this.vertex2 = vertex2;
@@ -36,5 +36,11 @@ public class Edge
     public boolean hasVertex(Vertex v)
     {
         return vertex1.equals(v) || vertex2.equals(v);
+    }
+
+    public void switchDirection() {
+        Vertex temp = vertex1;
+        vertex1 = vertex2;
+        vertex2 = temp;
     }
 }

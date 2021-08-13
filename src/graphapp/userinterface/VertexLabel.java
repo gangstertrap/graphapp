@@ -51,4 +51,9 @@ public class VertexLabel extends Label
         circle.setStroke(bool ? AppColors.SELECTED_COLOR : Color.BLACK);
     }
 
+    public void updateId(String s) {
+        if(!s.equals(vertex.getId()))
+            System.out.println("VERY BAD???");
+        this.setText(s);
+    }
 }
